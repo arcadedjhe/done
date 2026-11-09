@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f3ee">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Done – vaporisateur de tâches</title>
+<style>
+  :root {
+    --bg: #f6f3ee;
+    --card: #fffdf9;
+    --ink: #3b3a36;
+    --muted: #8d8a82;
+    --line: #e8e3da;
+    --sage: #8a9a86;
+    --sage-dark: #6f8069;
+    --sand: #d9cfbd;
+    --yellow-bg: #f7e7a1;
+    --yellow-ink: #5a4a00;
+    --red: #b3001b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    min-height: 100vh;
+    padding: env(safe-area-inset-top) 0 120px;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 0 20px; }
+  .brand { padding: 28px 0 0; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .brand b { font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; color: var(--sage-dark); }
+  .brand span { font-size: .85rem; font-style: italic; color: var(--muted); }
+  header { padding: 28px 0 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+  header h1 { margin: 0; font-weight: 400; font-size: 2rem; letter-spacing: .01em; }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: .95rem; font-style: italic; text-transform: capitalize; }
+  .menu-btn { background: none; border: none; color: var(--muted); font-size: 1.6rem; padding: 8px 4px; cursor: pointer; }
+
+  .list { display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    padding: 16px 18px; display: flex; align-items: center; gap: 16px;
+    transition: opacity .35s, transform .35s;
+  }
+  .card.done { opacity: 0; transform: translateX(24px); }
+  .check {
+    flex: none; width: 28px; height: 28px; border-radius: 50%;
+    border: 1.5px solid var(--sand); background: transparent; cursor: pointer; padding: 0;
+    transition: background .2s, border-color .2s;
+  }
+  .check:hover, .check:active { background: var(--sage); border-color: var(--sage); }
+  .body { flex: 1; min-width: 0; cursor: pointer; }
+  .title { font-size: 1.08rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .meta { color: var(--muted); font-size: .85rem; margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; font-family: system-ui, sans-serif; }
+  .prio-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--sage-dark); margin-right: 5px; vertical-align: middle; }
+  .card.prio { border-color: var(--sage); }
+
+  /* Retard : jaune */
+  .card.late1 { background: var(--yellow-bg); border-color: #e3cf6e; color: var(--yellow-ink); }
+  .card.late1 .meta { color: #7d6a10; }
+  .card.late1 .check { border-color: #b59c2a; }
+
+  /* Retard important : rouge très visible */
+  .card.late2 {
+    background: var(--red); border: none; color: #fff; padding: 26px 22px;
+    box-shadow: 0 0 0 0 rgba(179,0,27,.6); animation: pulse 1.8s infinite;
+  }
+  .card.late2 .title { font-size: 1.45rem; font-weight: 700; font-family: system-ui, sans-serif; }
+  .card.late2 .meta { color: #ffd9de; font-size: .95rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .card.late2 .check { width: 36px; height: 36px; border: 2px solid #fff; }
+  .card.late2 .check:hover, .card.late2 .check:active { background: #fff; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(179,0,27,.55); }
+    70% { box-shadow: 0 0 0 16px rgba(179,0,27,0); }
+    100% { box-shadow: 0 0 0 0 rgba(179,0,27,0); }
+  }
+
+  .empty { text-align: center; color: var(--muted); font-style: italic; padding: 60px 0; line-height: 1.8; }
+  details { margin-top: 32px; }
+  summary { color: var(--muted); cursor: pointer; font-style: italic; padding: 8px 0; list-style: none; }
+  summary::before { content: "▸ "; }
+  details[open] summary::before { content: "▾ "; }
+  details .list { margin-top: 10px; }
+
+  .fab {
+    position: fixed; right: 22px; bottom: calc(22px + env(safe-area-inset-bottom));
+    width: 60px; height: 60px; border-radius: 50%; border: none;
+    background: var(--sage-dark); color: #fff; font-size: 2rem; line-height: 1; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(80,95,75,.35);
+  }
+
+  dialog {
+    border: none; border-radius: 24px; padding: 26px 24px; width: min(440px, 92vw);
+    background: var(--card); color: var(--ink); font-family: inherit;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  }
+  dialog::backdrop { background: rgba(59,58,54,.35); }
+  dialog h2 { margin: 0 0 18px; font-weight: 400; font-size: 1.4rem; }
+  label.field { display: block; font-family: system-ui, sans-serif; font-size: .8rem; color: var(--muted); margin: 14px 0 6px; letter-spacing: .03em; text-transform: uppercase; }
+  input[type=text], input[type=date], input[type=number] {
+    width: 100%; font-size: 1rem; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
+    background: #fff; color: var(--ink); font-family: system-ui, sans-serif;
+  }
+  input:focus { outline: 2px solid var(--sage); border-color: transparent; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; font-family: system-ui, sans-serif; }
+  .switch { position: relative; width: 46px; height: 26px; flex: none; }
+  .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; margin: 0; cursor: pointer; z-index: 1; }
+  .switch span { position: absolute; inset: 0; background: var(--sand); border-radius: 26px; transition: .2s; }
+  .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: .2s; }
+  .switch input:checked + span { background: var(--sage-dark); }
+  .switch input:checked + span::after { transform: translateX(20px); }
+  .every { display: none; align-items: center; gap: 10px; margin-top: 12px; font-family: system-ui, sans-serif; }
+  .every.on { display: flex; }
+  .every input { width: 80px; }
+  .actions { display: flex; gap: 10px; margin-top: 26px; font-family: system-ui, sans-serif; }
+  .btn { flex: 1; padding: 13px; border-radius: 14px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 1rem; cursor: pointer; }
+  .btn.primary { background: var(--sage-dark); border-color: var(--sage-dark); color: #fff; }
+  .btn.danger { color: var(--red); flex: none; padding: 13px 16px; }
+  .hint { color: var(--muted); font-size: .85rem; line-height: 1.5; font-family: system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><b>Done</b><span>vaporisateur de tâches</span></div>
+  <header>
+    <div>
+      <h1>Aujourd'hui</h1>
+      <p id="date"></p>
+    </div>
+    <button class="menu-btn" id="menuBtn" aria-label="Sauvegarde">⋯</button>
+  </header>
+
+  <section class="list" id="today"></section>
+  <details id="laterBox" hidden>
+    <summary id="laterSummary">Plus tard</summary>
+    <div class="list" id="later"></div>
+  </details>
+</main>
+
+<button class="fab" id="addBtn" aria-label="Ajouter une tâche">+</button>
+
+<dialog id="taskDlg">
+  <form method="dialog" id="taskForm">
+    <h2 id="dlgTitle">Nouvelle tâche</h2>
+    <label class="field" for="fTitle">Tâche</label>
+    <input type="text" id="fTitle" required autocomplete="off" maxlength="160">
+
+    <label class="field" for="fDue">Échéance</label>
+    <input type="date" id="fDue" required>
+
+    <div class="row">
+      <span>Prioritaire</span>
+      <label class="switch"><input type="checkbox" id="fPrio"><span></span></label>
+    </div>
+
+    <div class="row">
+      <span>Périodique</span>
+      <label class="switch"><input type="checkbox" id="fPeriodic"><span></span></label>
+    </div>
+    <div class="every" id="everyBox">
+      <span>Tous les</span>
+      <input type="number" id="fEvery" min="1" max="365" value="7">
+      <span>jours</span>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn danger" id="delBtn" hidden>Supprimer</button>
+      <button type="button" class="btn" id="cancelBtn">Annuler</button>
+      <button type="submit" class="btn primary">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="menuDlg">
+  <h2>Sauvegarde</h2>
+  <p class="hint">Tes tâches sont stockées uniquement dans ce navigateur. Exporte un fichier de temps en temps pour ne rien perdre ou pour changer d'appareil.</p>
+  <div class="actions" style="flex-direction:column">
+    <button class="btn" id="exportBtn">Exporter mes tâches</button>
+    <button class="btn" id="importBtn">Importer un fichier</button>
+    <button class="btn" id="closeMenu">Fermer</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json" hidden>
+</dialog>
+
+<script>
+/* ---------- Réglages ---------- */
+const PRIO_RATIO = 0.05;      // 5 % du temps prévu avant l'échéance => prioritaire
+const DAY = 864e5;            // 1 jour en ms
+const SOON_DAYS = 2;          // tâches à venir affichées dans « Aujourd'hui »
+const KEY = 'zentodo.v1';
+
+/* ---------- Dates ---------- */
+const pad = n => String(n).padStart(2, '0');
+const fmtDate = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const todayStr = () => fmtDate(new Date());
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return fmtDate(d); };
+const endOfDay = s => { const d = parse(s); d.setHours(23, 59, 59, 999); return d.getTime(); };
+
+/* ---------- Logique (pure, testable) ---------- */
+function status(t, now) {
+  const due = endOfDay(t.due);
+  const late = now - due;
+  const level = late <= 0 ? 0 : (late < DAY ? 1 : 2);       // 0 ok, 1 jaune, 2 rouge
+  const auto = now >= due - PRIO_RATIO * (due - t.created);  // règle des 5 %
+  return { due, late, level, prio: !!t.priority || auto, daysLate: Math.ceil(late / DAY) };
+}
+function sortKey(t, now) {
+  const s = status(t, now);
+  if (s.level === 2) return [0, -s.late];
+  if (s.level === 1) return [1, -s.late];
+  return [s.prio ? 2 : 3, s.due];
+}
+function sortTasks(list, now) {
+  return [...list].sort((a, b) => {
+    const ka = sortKey(a, now), kb = sortKey(b, now);
+    return ka[0] - kb[0] || ka[1] - kb[1];
+  });
+}
+function isToday(t, now) {
+  const s = status(t, now);
+  return s.level > 0 || s.prio || t.due <= addDays(fmtDate(new Date(now)), SOON_DAYS);
+}
+function completeTask(list, id, now) {
+  const t = list.find(x => x.id === id);
+  if (!t) return list;
+  if (!t.every) return list.filter(x => x.id !== id);
+  const today = fmtDate(new Date(now));
+  const base = t.due > today ? t.due : today;           // en retard : on repart d'aujourd'hui
+  return list.map(x => x.id === id ? { ...x, due: addDays(base, t.every), created: now } : x);
+}
+
+/* ---------- Stockage ---------- */
+let tasks = [];
+try { tasks = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { tasks = []; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch (e) {} };
+
+/* ---------- Affichage ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function dueLabel(t, now) {
+  const today = fmtDate(new Date(now));
+  if (t.due === today) return "Aujourd'hui";
+  if (t.due === addDays(today, 1)) return 'Demain';
+  if (t.due === addDays(today, -1)) return 'Hier';
+  return parse(t.due).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function cardHTML(t, now) {
+  const s = status(t, now);
+  const cls = ['card'];
+  if (s.level === 2) cls.push('late2'); else if (s.level === 1) cls.push('late1'); else if (s.prio) cls.push('prio');
+  let meta;
+  if (s.level > 0) {
+    meta = `<span>En retard de ${s.daysLate} jour${s.daysLate > 1 ? 's' : ''}</span>`;
+  } else {
+    meta = `${s.prio ? '<span><i class="prio-dot"></i>Prioritaire</span>' : ''}<span>${esc(dueLabel(t, now))}</span>`;
+  }
+  if (t.every) meta += `<span>↻ ${t.every} j</span>`;
+  return `<article class="${cls.join(' ')}" data-id="${t.id}">
+    <button class="check" aria-label="Terminer"></button>
+    <div class="body"><div class="title">${esc(t.title)}</div><div class="meta">${meta}</div></div>
+  </article>`;
+}
+
+function render() {
+  const now = Date.now();
+  $('date').textContent = new Date(now).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const sorted = sortTasks(tasks, now);
+  const today = sorted.filter(t => isToday(t, now));
+  const later = sorted.filter(t => !isToday(t, now));
+  $('today').innerHTML = today.length
+    ? today.map(t => cardHTML(t, now)).join('')
+    : '<div class="empty">Rien d\'urgent aujourd\'hui.<br>Respire.</div>';
+  $('laterBox').hidden = later.length === 0;
+  $('laterSummary').textContent = `Plus tard (${later.length})`;
+  $('later').innerHTML = later.map(t => cardHTML(t, now)).join('');
+}
+
+/* ---------- Interactions ---------- */
+document.addEventListener('click', e => {
+  const card = e.target.closest('.card');
+  if (!card) return;
+  const id = card.dataset.id;
+  if (e.target.closest('.check')) {
+    card.classList.add('done');
+    setTimeout(() => { tasks = completeTask(tasks, id, Date.now()); save(); render(); }, 350);
+  } else if (e.target.closest('.body')) {
+    openForm(tasks.find(t => t.id === id));
+  }
+});
+
+let editingId = null;
+function openForm(t) {
+  editingId = t ? t.id : null;
+  $('dlgTitle').textContent = t ? 'Modifier la tâche' : 'Nouvelle tâche';
+  $('fTitle').value = t ? t.title : '';
+  $('fDue').value = t ? t.due : todayStr();
+  $('fPrio').checked = t ? !!t.priority : false;
+  $('fPeriodic').checked = !!(t && t.every);
+  $('fEvery').value = t && t.every ? t.every : 7;
+  $('everyBox').classList.toggle('on', $('fPeriodic').checked);
+  $('delBtn').hidden = !t;
+  $('taskDlg').showModal();
+  if (!t) setTimeout(() => $('fTitle').focus(), 50);
+}
+$('addBtn').onclick = () => openForm(null);
+$('cancelBtn').onclick = () => $('taskDlg').close();
+$('fPeriodic').onchange = e => $('everyBox').classList.toggle('on', e.target.checked);
+$('delBtn').onclick = () => {
+  if (editingId) { tasks = tasks.filter(t => t.id !== editingId); save(); render(); }
+  $('taskDlg').close();
+};
+$('taskForm').addEventListener('submit', () => {
+  const title = $('fTitle').value.trim();
+  if (!title || !$('fDue').value) return;
+  const every = $('fPeriodic').checked ? Math.max(1, parseInt($('fEvery').value, 10) || 1) : 0;
+  const data = { title, due: $('fDue').value, priority: $('fPrio').checked, every };
+  if (editingId) {
+    tasks = tasks.map(t => t.id === editingId ? { ...t, ...data } : t);
+  } else {
+    tasks.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created: Date.now(), ...data });
+  }
+  save(); render();
+});
+
+/* Sauvegarde / restauration */
+$('menuBtn').onclick = () => $('menuDlg').showModal();
+$('closeMenu').onclick = () => $('menuDlg').close();
+$('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'done-' + todayStr() + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!Array.isArray(data)) throw 0;
+    tasks = data.filter(t => t && t.id && t.title && t.due && t.created);
+    save(); render(); $('menuDlg').close();
+  } catch (err) { alert('Fichier invalide.'); }
+  e.target.value = '';
+};
+
+/* Rafraîchissement : chaque minute et au retour sur l'appli */
+setInterval(render, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+render();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
