@@ -3,7 +3,7 @@
   "short_name": "Done",
   "description": "Done, le vaporisateur de tâches : priorités automatiques et alertes de retard.",
   "id": "/done-vaporisateur-de-taches",
-  "start_url": "./",
+  "start_url": "./index.html?source=done",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f6f3ee",
