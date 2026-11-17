@@ -18,8 +18,13 @@
     --sage: #8a9a86;
     --sage-dark: #6f8069;
     --sand: #d9cfbd;
-    --yellow-bg: #f7e7a1;
-    --yellow-ink: #5a4a00;
+    --track: #ece6db;
+    --yellow-bg: #fcf6dc;
+    --yellow-line: #e9d88f;
+    --yellow-bar: #d6b84e;
+    --rose-bg: #faebe7;
+    --rose-line: #dea196;
+    --rose-bar: #c96a5d;
     --red: #b3001b;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -57,20 +62,34 @@
   .prio-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--sage-dark); margin-right: 5px; vertical-align: middle; }
   .card.prio { border-color: var(--sage); }
 
-  /* Retard : jaune */
-  .card.late1 { background: var(--yellow-bg); border-color: #e3cf6e; color: var(--yellow-ink); }
-  .card.late1 .meta { color: #7d6a10; }
-  .card.late1 .check { border-color: #b59c2a; }
+  /* Barre de progression du temps écoulé */
+  .barwrap { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .pct { flex: none; min-width: 2.8em; text-align: right; font-family: system-ui, sans-serif; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar { position: relative; flex: 1; height: 6px; border-radius: 6px; background: var(--track); overflow: hidden; }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--sage); transition: width .6s; }
+  .bar .tick { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--card); }
 
-  /* Retard important : rouge très visible */
-  .card.late2 {
+  /* 10 % restants : jaune zen */
+  .card.yellow { background: var(--yellow-bg); border-color: var(--yellow-line); }
+  .card.yellow .bar i { background: var(--yellow-bar); }
+  .card.yellow .check { border-color: var(--yellow-bar); }
+
+  /* 5 % restants : rouge zen */
+  .card.red { background: var(--rose-bg); border-color: var(--rose-line); }
+  .card.red .bar i { background: var(--rose-bar); }
+  .card.red .check { border-color: var(--rose-bar); }
+
+  /* Échéance dépassée : affichage marquant */
+  .card.late {
     background: var(--red); border: none; color: #fff; padding: 26px 22px;
     box-shadow: 0 0 0 0 rgba(179,0,27,.6); animation: pulse 1.8s infinite;
   }
-  .card.late2 .title { font-size: 1.45rem; font-weight: 700; font-family: system-ui, sans-serif; }
-  .card.late2 .meta { color: #ffd9de; font-size: .95rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-  .card.late2 .check { width: 36px; height: 36px; border: 2px solid #fff; }
-  .card.late2 .check:hover, .card.late2 .check:active { background: #fff; }
+  .card.late .title { font-size: 1.45rem; font-weight: 700; font-family: system-ui, sans-serif; }
+  .card.late .meta { color: #ffd9de; font-size: .95rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .card.late .check { width: 36px; height: 36px; border: 2px solid #fff; }
+  .card.late .check:hover, .card.late .check:active { background: #fff; }
+  .card.late .bar { background: rgba(255,255,255,.28); height: 8px; }
+  .card.late .bar i { background: #fff; }
   @keyframes pulse {
     0% { box-shadow: 0 0 0 0 rgba(179,0,27,.55); }
     70% { box-shadow: 0 0 0 16px rgba(179,0,27,0); }
@@ -99,11 +118,17 @@
   dialog::backdrop { background: rgba(59,58,54,.35); }
   dialog h2 { margin: 0 0 18px; font-weight: 400; font-size: 1.4rem; }
   label.field { display: block; font-family: system-ui, sans-serif; font-size: .8rem; color: var(--muted); margin: 14px 0 6px; letter-spacing: .03em; text-transform: uppercase; }
-  input[type=text], input[type=date], input[type=number] {
+  input[type=text], input[type=date], input[type=time], input[type=number] {
     width: 100%; font-size: 1rem; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
     background: #fff; color: var(--ink); font-family: system-ui, sans-serif;
   }
   input:focus { outline: 2px solid var(--sage); border-color: transparent; }
+  .dt { display: flex; gap: 10px; }
+  .dt > div { min-width: 0; }
+  .dt > div:first-child { flex: 1.3; }
+  .dt > div:last-child { flex: 1; }
+  .dt input { min-width: 0; }
+  .dt label.field { margin-top: 14px; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; font-family: system-ui, sans-serif; }
   .switch { position: relative; width: 46px; height: 26px; flex: none; }
   .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; margin: 0; cursor: pointer; z-index: 1; }
@@ -147,8 +172,16 @@
     <label class="field" for="fTitle">Tâche</label>
     <input type="text" id="fTitle" required autocomplete="off" maxlength="160">
 
-    <label class="field" for="fDue">Échéance</label>
-    <input type="date" id="fDue" required>
+    <div class="dt">
+      <div>
+        <label class="field" for="fDue">Échéance</label>
+        <input type="date" id="fDue" required>
+      </div>
+      <div>
+        <label class="field" for="fTime">Heure (option)</label>
+        <input type="time" id="fTime">
+      </div>
+    </div>
 
     <div class="row">
       <span>Prioritaire</span>
@@ -186,9 +219,14 @@
 
 <script>
 /* ---------- Réglages ---------- */
-const PRIO_RATIO = 0.05;      // 5 % du temps prévu avant l'échéance => prioritaire
-const DAY = 864e5;            // 1 jour en ms
-const SOON_DAYS = 2;          // tâches à venir affichées dans « Aujourd'hui »
+const DAY = 864e5;                 // 1 jour en ms
+const HOUR = 36e5;                 // 1 heure en ms
+const SOON_DAYS = 2;               // tâches à venir affichées dans « Aujourd'hui »
+const SHORT_MAX = 2 * DAY;         // durée prévue < 2 jours : tâche courte
+const LONG_MIN = 90 * DAY;         // durée prévue > 90 jours (≈ 3 mois) : tâche longue
+const YELLOW_AT = 0.90;            // 10 % du temps restant : jaune + prioritaire
+const RED_AT = 0.95;               //  5 % du temps restant : rouge zen
+const LONG_BAR_AT = 0.25;          // tâche longue : la barre apparaît à 25 % écoulés
 const KEY = 'zentodo.v1';
 
 /* ---------- Dates ---------- */
@@ -197,31 +235,48 @@ const fmtDate = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d
 const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const todayStr = () => fmtDate(new Date());
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return fmtDate(d); };
-const endOfDay = s => { const d = parse(s); d.setHours(23, 59, 59, 999); return d.getTime(); };
+// Échéance exacte : heure choisie, sinon fin de journée (23:59)
+const dueTs = t => {
+  const d = parse(t.due);
+  if (t.time && /^\d{2}:\d{2}$/.test(t.time)) {
+    const [h, m] = t.time.split(':').map(Number);
+    d.setHours(h, m, 0, 0);
+  } else {
+    d.setHours(23, 59, 59, 999);
+  }
+  return d.getTime();
+};
 
 /* ---------- Logique (pure, testable) ---------- */
 function status(t, now) {
-  const due = endOfDay(t.due);
-  const late = now - due;
-  const level = late <= 0 ? 0 : (late < DAY ? 1 : 2);       // 0 ok, 1 jaune, 2 rouge
-  const auto = now >= due - PRIO_RATIO * (due - t.created);  // règle des 5 %
-  return { due, late, level, prio: !!t.priority || auto, daysLate: Math.ceil(late / DAY) };
+  const due = dueTs(t);
+  const total = Math.max(due - t.created, 60000);                 // temps prévu (≥ 1 min)
+  const pct = Math.min(Math.max((now - t.created) / total, 0), 1); // part du temps écoulée
+  const late = now > due;
+  const mode = total < SHORT_MAX ? 'short' : (total > LONG_MIN ? 'long' : 'mid');
+  let level = 'ok';
+  if (late) level = 'late';
+  else if (pct >= RED_AT) level = 'red';
+  else if (pct >= YELLOW_AT) level = 'yellow';
+  const showBar = late || pct >= YELLOW_AT || (mode === 'long' && pct >= LONG_BAR_AT);
+  return {
+    due, total, mode, level, showBar, late,
+    pct: late ? 1 : pct,
+    lateMs: Math.max(now - due, 0),
+    prio: !!t.priority || late || pct >= YELLOW_AT
+  };
 }
-function sortKey(t, now) {
-  const s = status(t, now);
-  if (s.level === 2) return [0, -s.late];
-  if (s.level === 1) return [1, -s.late];
-  return [s.prio ? 2 : 3, s.due];
-}
+const RANK = { late: 0, red: 1, yellow: 2 };
 function sortTasks(list, now) {
   return [...list].sort((a, b) => {
-    const ka = sortKey(a, now), kb = sortKey(b, now);
-    return ka[0] - kb[0] || ka[1] - kb[1];
+    const sa = status(a, now), sb = status(b, now);
+    const ra = RANK[sa.level] ?? (sa.prio ? 3 : 4);
+    const rb = RANK[sb.level] ?? (sb.prio ? 3 : 4);
+    return ra - rb || sa.due - sb.due;
   });
 }
 function isToday(t, now) {
-  const s = status(t, now);
-  return s.level > 0 || s.prio || t.due <= addDays(fmtDate(new Date(now)), SOON_DAYS);
+  return status(t, now).prio || t.due <= addDays(fmtDate(new Date(now)), SOON_DAYS);
 }
 function completeTask(list, id, now) {
   const t = list.find(x => x.id === id);
@@ -243,26 +298,41 @@ const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '
 
 function dueLabel(t, now) {
   const today = fmtDate(new Date(now));
-  if (t.due === today) return "Aujourd'hui";
-  if (t.due === addDays(today, 1)) return 'Demain';
-  if (t.due === addDays(today, -1)) return 'Hier';
-  return parse(t.due).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+  let label;
+  if (t.due === today) label = "Aujourd'hui";
+  else if (t.due === addDays(today, 1)) label = 'Demain';
+  else if (t.due === addDays(today, -1)) label = 'Hier';
+  else label = parse(t.due).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+  return t.time ? label + ' · ' + t.time : label;
 }
-
+function lateLabel(ms) {
+  const h = Math.floor(ms / HOUR);
+  if (h < 1) return "moins d'1 h";
+  if (h < 48) return h + ' h';
+  return Math.floor(ms / DAY) + ' jours';
+}
+function barHTML(s) {
+  if (!s.showBar) return '';
+  const p = Math.floor(s.pct * 100);   // jamais « 100 % » avant l'échéance
+  const ticks = s.mode === 'long'
+    ? '<b class="tick" style="left:50%"></b><b class="tick" style="left:75%"></b>' : '';
+  const label = s.late ? '' : `<span class="pct">${p} %</span>`;
+  return `<div class="barwrap"><div class="bar" role="progressbar" aria-label="Temps écoulé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p}"><i style="width:${p}%"></i>${ticks}</div>${label}</div>`;
+}
 function cardHTML(t, now) {
   const s = status(t, now);
   const cls = ['card'];
-  if (s.level === 2) cls.push('late2'); else if (s.level === 1) cls.push('late1'); else if (s.prio) cls.push('prio');
+  if (s.level !== 'ok') cls.push(s.level); else if (s.prio) cls.push('prio');
   let meta;
-  if (s.level > 0) {
-    meta = `<span>En retard de ${s.daysLate} jour${s.daysLate > 1 ? 's' : ''}</span>`;
+  if (s.late) {
+    meta = `<span>En retard de ${lateLabel(s.lateMs)}</span>`;
   } else {
     meta = `${s.prio ? '<span><i class="prio-dot"></i>Prioritaire</span>' : ''}<span>${esc(dueLabel(t, now))}</span>`;
   }
   if (t.every) meta += `<span>↻ ${t.every} j</span>`;
   return `<article class="${cls.join(' ')}" data-id="${t.id}">
     <button class="check" aria-label="Terminer"></button>
-    <div class="body"><div class="title">${esc(t.title)}</div><div class="meta">${meta}</div></div>
+    <div class="body"><div class="title">${esc(t.title)}</div><div class="meta">${meta}</div>${barHTML(s)}</div>
   </article>`;
 }
 
@@ -299,6 +369,7 @@ function openForm(t) {
   $('dlgTitle').textContent = t ? 'Modifier la tâche' : 'Nouvelle tâche';
   $('fTitle').value = t ? t.title : '';
   $('fDue').value = t ? t.due : todayStr();
+  $('fTime').value = t && t.time ? t.time : '';
   $('fPrio').checked = t ? !!t.priority : false;
   $('fPeriodic').checked = !!(t && t.every);
   $('fEvery').value = t && t.every ? t.every : 7;
@@ -318,9 +389,9 @@ $('taskForm').addEventListener('submit', () => {
   const title = $('fTitle').value.trim();
   if (!title || !$('fDue').value) return;
   const every = $('fPeriodic').checked ? Math.max(1, parseInt($('fEvery').value, 10) || 1) : 0;
-  const data = { title, due: $('fDue').value, priority: $('fPrio').checked, every };
+  const data = { title, due: $('fDue').value, time: $('fTime').value || '', priority: $('fPrio').checked, every };
   if (editingId) {
-    tasks = tasks.map(t => t.id === editingId ? { ...t, ...data } : t);
+    tasks = tasks.map(t => t.id === editingId ? { ...t, ...data } : t);   // la date de création d'origine est conservée
   } else {
     tasks.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created: Date.now(), ...data });
   }
