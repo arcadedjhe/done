@@ -144,6 +144,26 @@
   .btn.primary { background: var(--sage-dark); border-color: var(--sage-dark); color: #fff; }
   .btn.danger { color: var(--red); flex: none; padding: 13px 16px; }
   .hint { color: var(--muted); font-size: .85rem; line-height: 1.5; font-family: system-ui, sans-serif; }
+  dialog { max-height: 90vh; overflow: auto; }
+
+  /* Bandeau d'annulation */
+  #toast {
+    position: fixed; left: 20px; right: 100px; bottom: calc(26px + env(safe-area-inset-bottom));
+    max-width: 420px; display: flex; align-items: center; gap: 12px;
+    background: #3b3a36; color: #fff; border-radius: 16px; padding: 12px 14px 12px 18px;
+    font-family: system-ui, sans-serif; font-size: .92rem; box-shadow: 0 8px 24px rgba(0,0,0,.25); z-index: 10;
+  }
+  #toast[hidden] { display: none; }
+  #toastMsg { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #toastUndo { flex: none; background: none; border: none; color: #c9d6c4; font-size: .95rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 8px 4px; cursor: pointer; }
+
+  /* Restauration récente (menu) */
+  .trash-title { margin: 20px 0 8px; font-family: system-ui, sans-serif; font-size: .8rem; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; }
+  .trow { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-family: system-ui, sans-serif; }
+  .trow .ttxt { flex: 1; min-width: 0; }
+  .trow .ttxt b { display: block; font-weight: 500; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trow .ttxt small { color: var(--muted); font-size: .78rem; }
+  .trow .btn { flex: none; padding: 8px 14px; font-size: .88rem; }
 </style>
 </head>
 <body>
@@ -165,6 +185,11 @@
 </main>
 
 <button class="fab" id="addBtn" aria-label="Ajouter une tâche">+</button>
+
+<div id="toast" role="status" aria-live="polite" hidden>
+  <span id="toastMsg"></span>
+  <button id="toastUndo">Annuler</button>
+</div>
 
 <dialog id="taskDlg">
   <form method="dialog" id="taskForm">
@@ -209,6 +234,7 @@
 <dialog id="menuDlg">
   <h2>Sauvegarde</h2>
   <p class="hint">Tes tâches sont stockées uniquement dans ce navigateur. Exporte un fichier de temps en temps pour ne rien perdre ou pour changer d'appareil.</p>
+  <div id="trashBox"></div>
   <div class="actions" style="flex-direction:column">
     <button class="btn" id="exportBtn">Exporter mes tâches</button>
     <button class="btn" id="importBtn">Importer un fichier</button>
@@ -228,6 +254,10 @@ const YELLOW_AT = 0.90;            // 10 % du temps restant : jaune + prioritair
 const RED_AT = 0.95;               //  5 % du temps restant : rouge zen
 const LONG_BAR_AT = 0.25;          // tâche longue : la barre apparaît à 25 % écoulés
 const KEY = 'zentodo.v1';
+const TRASH_KEY = 'zentodo.trash.v1';
+const TRASH_MAX = 10;              // tâches récupérables au maximum
+const TRASH_TTL = 24 * HOUR;       // pendant 24 h
+const TOAST_MS = 10000;            // durée du bandeau « Annuler »
 
 /* ---------- Dates ---------- */
 const pad = n => String(n).padStart(2, '0');
@@ -286,11 +316,20 @@ function completeTask(list, id, now) {
   const base = t.due > today ? t.due : today;           // en retard : on repart d'aujourd'hui
   return list.map(x => x.id === id ? { ...x, due: addDays(base, t.every), created: now } : x);
 }
+/* Annulation : on garde la tâche telle qu'elle était juste avant l'action */
+const pruneTrash = (trash, now) => trash.filter(e => e && e.task && now - e.at < TRASH_TTL).slice(0, TRASH_MAX);
+const pushTrash = (trash, entry, now) => pruneTrash([entry, ...trash], now);
+const restoreTask = (list, task) => [...list.filter(x => x.id !== task.id), task];   // remplace aussi l'occurrence suivante d'une tâche périodique
 
 /* ---------- Stockage ---------- */
 let tasks = [];
 try { tasks = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { tasks = []; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch (e) {} };
+let trash = [];
+try { trash = JSON.parse(localStorage.getItem(TRASH_KEY)) || []; } catch (e) { trash = []; }
+trash = pruneTrash(Array.isArray(trash) ? trash : [], Date.now());
+const saveTrash = () => { try { localStorage.setItem(TRASH_KEY, JSON.stringify(trash)); } catch (e) {} };
+saveTrash();   // purge immédiate des entrées trop anciennes
 
 /* ---------- Affichage ---------- */
 const $ = id => document.getElementById(id);
@@ -356,8 +395,14 @@ document.addEventListener('click', e => {
   if (!card) return;
   const id = card.dataset.id;
   if (e.target.closest('.check')) {
+    if (card.classList.contains('done')) return;          // évite le double appui
     card.classList.add('done');
-    setTimeout(() => { tasks = completeTask(tasks, id, Date.now()); save(); render(); }, 350);
+    setTimeout(() => {
+      const before = tasks.find(t => t.id === id);
+      if (!before) return;
+      tasks = completeTask(tasks, id, Date.now()); save();
+      recordAction(before, 'done'); render();
+    }, 350);
   } else if (e.target.closest('.body')) {
     openForm(tasks.find(t => t.id === id));
   }
@@ -382,7 +427,8 @@ $('addBtn').onclick = () => openForm(null);
 $('cancelBtn').onclick = () => $('taskDlg').close();
 $('fPeriodic').onchange = e => $('everyBox').classList.toggle('on', e.target.checked);
 $('delBtn').onclick = () => {
-  if (editingId) { tasks = tasks.filter(t => t.id !== editingId); save(); render(); }
+  const before = editingId && tasks.find(t => t.id === editingId);
+  if (before) { tasks = tasks.filter(t => t.id !== editingId); save(); recordAction(before, 'deleted'); render(); }
   $('taskDlg').close();
 };
 $('taskForm').addEventListener('submit', () => {
@@ -398,8 +444,50 @@ $('taskForm').addEventListener('submit', () => {
   save(); render();
 });
 
+/* Annulation : bandeau + liste de restauration */
+let toastTimer = null, toastEntry = null;
+function hideToast() { clearTimeout(toastTimer); toastEntry = null; $('toast').hidden = true; }
+function showToast(entry) {
+  toastEntry = entry;
+  $('toastMsg').textContent = '« ' + entry.task.title + ' » ' + (entry.kind === 'deleted' ? 'supprimée' : 'terminée');
+  $('toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, TOAST_MS);
+}
+function recordAction(task, kind) {
+  const entry = { task, kind, at: Date.now() };
+  trash = pushTrash(trash, entry, entry.at); saveTrash();
+  showToast(entry);
+}
+function restoreEntry(entry) {
+  tasks = restoreTask(tasks, entry.task); save();
+  trash = trash.filter(e => !(e.at === entry.at && e.task.id === entry.task.id)); saveTrash();
+  if (toastEntry && toastEntry.at === entry.at) hideToast();
+  render();
+}
+$('toastUndo').onclick = () => { if (toastEntry) restoreEntry(toastEntry); };
+const ago = ms => {
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return 'il y a ' + m + ' min';
+  return 'il y a ' + Math.floor(m / 60) + ' h';
+};
+function renderTrash() {
+  trash = pruneTrash(trash, Date.now()); saveTrash();
+  const box = $('trashBox');
+  if (!trash.length) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="trash-title">Récupérer une tâche</div>' + trash.map((e, i) =>
+    `<div class="trow"><div class="ttxt"><b>${esc(e.task.title)}</b><small>${e.kind === 'deleted' ? 'supprimée' : 'terminée'} ${ago(Date.now() - e.at)}</small></div><button class="btn" data-restore="${i}">Restaurer</button></div>`).join('');
+}
+$('trashBox').addEventListener('click', e => {
+  const b = e.target.closest('[data-restore]');
+  if (!b) return;
+  const entry = trash[Number(b.dataset.restore)];
+  if (entry) { restoreEntry(entry); renderTrash(); }
+});
+
 /* Sauvegarde / restauration */
-$('menuBtn').onclick = () => $('menuDlg').showModal();
+$('menuBtn').onclick = () => { renderTrash(); $('menuDlg').showModal(); };
 $('closeMenu').onclick = () => $('menuDlg').close();
 $('exportBtn').onclick = () => {
   const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' });

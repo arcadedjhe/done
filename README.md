@@ -16,7 +16,8 @@ Les données restent dans ton navigateur (aucun serveur, aucun compte).
 - **Périodique** : en validant la tâche, la prochaine occurrence se recrée (échéance + N jours ; si tu étais en retard, N jours à partir d'aujourd'hui) et le décompte repart à zéro.
 - **Aujourd'hui** : retards, prioritaires, et échéances dans les 2 jours. Le reste est dans « Plus tard ».
 - **Modifier l'échéance** : la date de création d'origine est conservée, la barre reflète donc le temps réellement écoulé.
-- **Pas d'historique** : une tâche validée disparaît.
+- **Annulation** : après une validation ou une suppression, un bandeau « Annuler » reste affiché 10 secondes. Les 10 dernières tâches terminées ou supprimées restent aussi récupérables pendant 24 h dans le menu « ⋯ » (« Récupérer une tâche »), puis sont effacées automatiquement. Annuler une tâche périodique restaure son ancienne échéance.
+- **Pas d'historique durable** : au-delà de 24 h, une tâche validée a disparu pour de bon.
 - **Sauvegarde** : menu « ⋯ » pour exporter / importer un fichier JSON.
 
 ## Déployer sur GitHub Pages
