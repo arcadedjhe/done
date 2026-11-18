@@ -46,12 +46,12 @@
   .list { display: flex; flex-direction: column; gap: 12px; }
   .card {
     background: var(--card); border: 1px solid var(--line); border-radius: 18px;
-    padding: 16px 18px; display: flex; align-items: center; gap: 16px;
+    padding: 16px 18px; display: flex; align-items: flex-start; gap: 16px;
     transition: opacity .35s, transform .35s;
   }
   .card.done { opacity: 0; transform: translateX(24px); }
   .check {
-    flex: none; width: 28px; height: 28px; border-radius: 50%;
+    flex: none; width: 28px; height: 28px; border-radius: 50%; margin-top: 1px;
     border: 1.5px solid var(--sand); background: transparent; cursor: pointer; padding: 0;
     transition: background .2s, border-color .2s;
   }
@@ -73,11 +73,13 @@
   .card.yellow { background: var(--yellow-bg); border-color: var(--yellow-line); }
   .card.yellow .bar i { background: var(--yellow-bar); }
   .card.yellow .check { border-color: var(--yellow-bar); }
+  .card.yellow .bar .tick { background: var(--yellow-bg); }
 
   /* 5 % restants : rouge zen */
   .card.red { background: var(--rose-bg); border-color: var(--rose-line); }
   .card.red .bar i { background: var(--rose-bar); }
   .card.red .check { border-color: var(--rose-bar); }
+  .card.red .bar .tick { background: var(--rose-bg); }
 
   /* Échéance dépassée : affichage marquant */
   .card.late {
@@ -95,6 +97,34 @@
     70% { box-shadow: 0 0 0 16px rgba(179,0,27,0); }
     100% { box-shadow: 0 0 0 0 rgba(179,0,27,0); }
   }
+
+  /* Sous-tâches sur la carte */
+  .subsum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 8px; font-family: system-ui, sans-serif; font-size: .82rem; color: var(--muted); }
+  .subtoggle { background: none; border: none; padding: 4px 0; color: inherit; font: inherit; cursor: pointer; }
+  .subsum .next { overflow-wrap: anywhere; }
+  .sublist { margin-top: 10px; display: flex; flex-direction: column; gap: 2px; font-family: system-ui, sans-serif; cursor: default; }
+  .sub { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .subcheck { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--sand); background: transparent; padding: 0; cursor: pointer; transition: background .2s, border-color .2s; }
+  .subcheck:hover:not(:disabled) { border-color: var(--sage); }
+  .sub.done .subcheck { background: var(--sage); border-color: var(--sage); }
+  .sub.done .subtitle { text-decoration: line-through; color: var(--muted); }
+  .sub.blocked { opacity: .45; }
+  .sub.blocked .subcheck { cursor: not-allowed; }
+  .subtitle { flex: 1; min-width: 0; font-size: .92rem; overflow-wrap: anywhere; }
+  .subdue { flex: none; font-size: .78rem; color: var(--muted); }
+  .subdue.lv-yellow { color: #9a7d12; }
+  .subdue.lv-red { color: #b5483b; }
+  .subdue.lv-late { color: var(--red); font-weight: 700; }
+  .subaddform input[type=text] { width: 100%; border: none; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; color: inherit; padding: 8px 2px; font-size: .9rem; font-family: inherit; }
+  .subaddform input[type=text]:focus { outline: none; border-bottom-color: var(--sage); }
+  .card.late .subsum, .card.late .subdue { color: #ffd9de; }
+  .card.late .subdue.lv-late { color: #fff; }
+  .card.late .subcheck { border-color: #fff; }
+  .card.late .sub.done .subcheck { background: #fff; }
+  .card.late .subtitle { color: #fff; }
+  .card.late .sub.done .subtitle { color: #ffd9de; }
+  .card.late .subaddform input[type=text] { border-bottom-color: rgba(255,255,255,.45); color: #fff; }
+  .card.late .subaddform input::placeholder { color: #ffd9de; }
 
   .empty { text-align: center; color: var(--muted); font-style: italic; padding: 60px 0; line-height: 1.8; }
   details { margin-top: 32px; }
@@ -130,6 +160,7 @@
   .dt input { min-width: 0; }
   .dt label.field { margin-top: 14px; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; font-family: system-ui, sans-serif; }
+  .row[hidden] { display: none; }
   .switch { position: relative; width: 46px; height: 26px; flex: none; }
   .switch input { opacity: 0; width: 100%; height: 100%; position: absolute; margin: 0; cursor: pointer; z-index: 1; }
   .switch span { position: absolute; inset: 0; background: var(--sand); border-radius: 26px; transition: .2s; }
@@ -142,9 +173,22 @@
   .actions { display: flex; gap: 10px; margin-top: 26px; font-family: system-ui, sans-serif; }
   .btn { flex: 1; padding: 13px; border-radius: 14px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 1rem; cursor: pointer; }
   .btn.primary { background: var(--sage-dark); border-color: var(--sage-dark); color: #fff; }
-  .btn.danger { color: var(--red); flex: none; padding: 13px 16px; }
+  .btn.danger { color: var(--red); flex: none; padding: 13px 14px; }
+  .actions .btn { min-width: 0; white-space: nowrap; }
+  .actions .btn:not(.danger) { padding-left: 8px; padding-right: 8px; }
   .hint { color: var(--muted); font-size: .85rem; line-height: 1.5; font-family: system-ui, sans-serif; }
   dialog { max-height: 90vh; overflow: auto; }
+
+  /* Éditeur de sous-tâches (formulaire) */
+  .srow { margin-top: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; display: flex; flex-direction: column; gap: 8px; background: #fff; }
+  .srow input[type=text] { padding: 10px 12px; font-size: .95rem; }
+  .srow .line2 { display: flex; gap: 6px; align-items: center; }
+  .srow input[type=date] { flex: 1; min-width: 0; padding: 8px 10px; font-size: .88rem; }
+  .srow .line2 button { flex: none; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 1rem; cursor: pointer; }
+  .srow .line2 button[data-act="del"] { color: var(--red); }
+  .srow .done-mark { font-family: system-ui, sans-serif; font-size: .75rem; color: var(--sage-dark); }
+  .add-sub { width: 100%; flex: none; margin-top: 8px; padding: 10px; font-size: .92rem; color: var(--sage-dark); border-style: dashed; }
+  .add-sub[hidden] { display: none; }
 
   /* Bandeau d'annulation */
   #toast {
@@ -156,6 +200,7 @@
   #toast[hidden] { display: none; }
   #toastMsg { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #toastUndo { flex: none; background: none; border: none; color: #c9d6c4; font-size: .95rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 8px 4px; cursor: pointer; }
+  #toastUndo[hidden] { display: none; }
 
   /* Restauration récente (menu) */
   .trash-title { margin: 20px 0 8px; font-family: system-ui, sans-serif; font-size: .8rem; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; }
@@ -223,12 +268,29 @@
       <span>jours</span>
     </div>
 
+    <label class="field">Sous-tâches</label>
+    <div id="subList"></div>
+    <button type="button" class="btn add-sub" id="addSubBtn">+ Ajouter une sous-tâche</button>
+    <div class="row" id="orderedRow" hidden>
+      <span>Dans l'ordre</span>
+      <label class="switch"><input type="checkbox" id="fOrdered"><span></span></label>
+    </div>
+
     <div class="actions">
       <button type="button" class="btn danger" id="delBtn" hidden>Supprimer</button>
       <button type="button" class="btn" id="cancelBtn">Annuler</button>
       <button type="submit" class="btn primary">Enregistrer</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="confirmDlg">
+  <h2>Terminer la tâche ?</h2>
+  <p class="hint" id="confirmMsg"></p>
+  <div class="actions">
+    <button type="button" class="btn" id="confirmNo">Pas encore</button>
+    <button type="button" class="btn primary" id="confirmYes">Terminer</button>
+  </div>
 </dialog>
 
 <dialog id="menuDlg">
@@ -253,6 +315,7 @@ const LONG_MIN = 90 * DAY;         // durée prévue > 90 jours (≈ 3 mois) : t
 const YELLOW_AT = 0.90;            // 10 % du temps restant : jaune + prioritaire
 const RED_AT = 0.95;               //  5 % du temps restant : rouge zen
 const LONG_BAR_AT = 0.25;          // tâche longue : la barre apparaît à 25 % écoulés
+const MAX_SUBS = 20;               // sous-tâches maximum par tâche
 const KEY = 'zentodo.v1';
 const TRASH_KEY = 'zentodo.trash.v1';
 const TRASH_MAX = 10;              // tâches récupérables au maximum
@@ -265,6 +328,7 @@ const fmtDate = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d
 const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const todayStr = () => fmtDate(new Date());
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return fmtDate(d); };
+const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / DAY);
 // Échéance exacte : heure choisie, sinon fin de journée (23:59)
 const dueTs = t => {
   const d = parse(t.due);
@@ -278,22 +342,48 @@ const dueTs = t => {
 };
 
 /* ---------- Logique (pure, testable) ---------- */
-function status(t, now) {
-  const due = dueTs(t);
-  const total = Math.max(due - t.created, 60000);                 // temps prévu (≥ 1 min)
-  const pct = Math.min(Math.max((now - t.created) / total, 0), 1); // part du temps écoulée
+const LV = { ok: 0, yellow: 1, red: 2, late: 3 };
+const openSubs = t => (t.subs || []).filter(s => !s.done);
+// En mode « dans l'ordre », seule la prochaine étape non faite peut être cochée
+const isBlocked = (t, s) => { const o = openSubs(t); return !!t.ordered && !s.done && o.length > 0 && o[0].id !== s.id; };
+
+// Avancement d'une période [created, due] à l'instant now
+function calc(created, due, now) {
+  const total = Math.max(due - created, 60000);                    // temps prévu (≥ 1 min)
+  const pct = Math.min(Math.max((now - created) / total, 0), 1);   // part du temps écoulée
   const late = now > due;
   const mode = total < SHORT_MAX ? 'short' : (total > LONG_MIN ? 'long' : 'mid');
   let level = 'ok';
   if (late) level = 'late';
   else if (pct >= RED_AT) level = 'red';
   else if (pct >= YELLOW_AT) level = 'yellow';
-  const showBar = late || pct >= YELLOW_AT || (mode === 'long' && pct >= LONG_BAR_AT);
   return {
-    due, total, mode, level, showBar, late,
-    pct: late ? 1 : pct,
+    due, total, mode, level, late, pct,
     lateMs: Math.max(now - due, 0),
-    prio: !!t.priority || late || pct >= YELLOW_AT
+    showBar: late || pct >= YELLOW_AT || (mode === 'long' && pct >= LONG_BAR_AT)
+  };
+}
+// Une sous-tâche démarre avec la tâche principale et ne peut pas dépasser son échéance
+const subDue = (t, s) => Math.min(dueTs({ due: s.due }), dueTs(t));
+const subStatus = (t, s, now) => s.due ? calc(t.created, subDue(t, s), now) : null;
+
+function status(t, now) {
+  const own = calc(t.created, dueTs(t), now);
+  let level = own.level, cause = null, key = own.due;
+  // l'urgence d'une sous-tâche non faite remonte à la tâche principale
+  let best = null, bestSt = null;
+  for (const s of openSubs(t)) {
+    const ss = subStatus(t, s, now);
+    if (!ss) continue;
+    if (!bestSt || LV[ss.level] > LV[bestSt.level] || (LV[ss.level] === LV[bestSt.level] && ss.due < bestSt.due)) { best = s; bestSt = ss; }
+  }
+  if (bestSt && LV[bestSt.level] > LV[own.level]) { level = bestSt.level; cause = best; key = bestSt.due; }
+  return {
+    due: own.due, total: own.total, mode: own.mode, lateMs: own.lateMs,
+    level, ownLevel: own.level, ownLate: own.late, late: level === 'late', cause, key,
+    pct: own.late ? 1 : own.pct,
+    showBar: own.late ? true : (level === 'late' ? false : own.showBar),
+    prio: !!t.priority || level !== 'ok'
   };
 }
 const RANK = { late: 0, red: 1, yellow: 2 };
@@ -302,7 +392,7 @@ function sortTasks(list, now) {
     const sa = status(a, now), sb = status(b, now);
     const ra = RANK[sa.level] ?? (sa.prio ? 3 : 4);
     const rb = RANK[sb.level] ?? (sb.prio ? 3 : 4);
-    return ra - rb || sa.due - sb.due;
+    return ra - rb || sa.key - sb.key;
   });
 }
 function isToday(t, now) {
@@ -314,7 +404,35 @@ function completeTask(list, id, now) {
   if (!t.every) return list.filter(x => x.id !== id);
   const today = fmtDate(new Date(now));
   const base = t.due > today ? t.due : today;           // en retard : on repart d'aujourd'hui
-  return list.map(x => x.id === id ? { ...x, due: addDays(base, t.every), created: now } : x);
+  const newDue = addDays(base, t.every);
+  const delta = daysBetween(t.due, newDue);
+  return list.map(x => {
+    if (x.id !== id) return x;
+    const next = { ...x, due: newDue, created: now };
+    // nouvelle occurrence : sous-tâches décochées, dates décalées comme l'échéance
+    if (x.subs && x.subs.length) next.subs = x.subs.map(s => ({ ...s, done: false, due: s.due ? addDays(s.due, delta) : '' }));
+    return next;
+  });
+}
+function toggleSub(list, id, sid) {
+  return list.map(t => {
+    if (t.id !== id || !t.subs) return t;
+    const s = t.subs.find(x => x.id === sid);
+    if (!s || isBlocked(t, s)) return t;
+    return { ...t, subs: t.subs.map(x => x.id === sid ? { ...x, done: !x.done } : x) };
+  });
+}
+function addSub(list, id, title, sid) {
+  const ttl = String(title || '').trim();
+  if (!ttl) return list;
+  return list.map(t => (t.id === id && (t.subs || []).length < MAX_SUBS)
+    ? { ...t, subs: [...(t.subs || []), { id: sid, title: ttl, done: false, due: '' }] } : t);
+}
+// Ramène à l'échéance de la tâche les dates de sous-tâches qui la dépassent
+function capSubs(subs, due) {
+  let changed = 0;
+  const out = subs.map(s => { if (s.due && s.due > due) { changed++; return { ...s, due }; } return s; });
+  return { subs: out, changed };
 }
 /* Annulation : on garde la tâche telle qu'elle était juste avant l'action */
 const pruneTrash = (trash, now) => trash.filter(e => e && e.task && now - e.at < TRASH_TTL).slice(0, TRASH_MAX);
@@ -333,16 +451,24 @@ saveTrash();   // purge immédiate des entrées trop anciennes
 
 /* ---------- Affichage ---------- */
 const $ = id => document.getElementById(id);
-const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const openSet = new Set();     // cartes dont la liste de sous-tâches est dépliée
+let focusAddFor = null;        // carte dont le champ « + sous-tâche » doit prendre le focus
 
-function dueLabel(t, now) {
+function relDay(dateStr, now) {
   const today = fmtDate(new Date(now));
-  let label;
-  if (t.due === today) label = "Aujourd'hui";
-  else if (t.due === addDays(today, 1)) label = 'Demain';
-  else if (t.due === addDays(today, -1)) label = 'Hier';
-  else label = parse(t.due).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (dateStr === today) return "Aujourd'hui";
+  if (dateStr === addDays(today, 1)) return 'Demain';
+  if (dateStr === addDays(today, -1)) return 'Hier';
+  return null;
+}
+function dueLabel(t, now) {
+  const label = relDay(t.due, now) || parse(t.due).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
   return t.time ? label + ' · ' + t.time : label;
+}
+function subDueLabel(s, now) {
+  return relDay(s.due, now) || parse(s.due).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 function lateLabel(ms) {
   const h = Math.floor(ms / HOUR);
@@ -358,20 +484,46 @@ function barHTML(s) {
   const label = s.late ? '' : `<span class="pct">${p} %</span>`;
   return `<div class="barwrap"><div class="bar" role="progressbar" aria-label="Temps écoulé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p}"><i style="width:${p}%"></i>${ticks}</div>${label}</div>`;
 }
+function subsHTML(t, now) {
+  const subs = t.subs || [];
+  const isOpen = openSet.has(t.id);
+  let sum;
+  if (!subs.length) {
+    sum = `<div class="subsum"><button class="subtoggle">${isOpen ? '▾ sous-tâches' : '+ sous-tâche'}</button></div>`;
+  } else {
+    const done = subs.filter(x => x.done).length;
+    const next = t.ordered ? openSubs(t)[0] : null;
+    sum = `<div class="subsum"><button class="subtoggle" aria-expanded="${isOpen}">${isOpen ? '▾' : '▸'} ${done}/${subs.length}</button>${next ? `<span class="next">Prochaine : ${esc(next.title)}</span>` : ''}</div>`;
+  }
+  let list = '';
+  if (isOpen) {
+    list = '<div class="sublist">' + subs.map(s => {
+      const ss = subStatus(t, s, now);
+      const active = ss && !s.done && ss.level !== 'ok';
+      const due = s.due
+        ? `<span class="subdue${active ? ' lv-' + ss.level : ''}">${active && ss.late ? 'en retard · ' : ''}${esc(subDueLabel(s, now))}</span>` : '';
+      const blocked = isBlocked(t, s);
+      return `<div class="sub${s.done ? ' done' : ''}${blocked ? ' blocked' : ''}" data-sid="${esc(s.id)}"><button class="subcheck" aria-label="${s.done ? 'Rouvrir' : 'Terminer'} l'étape"${blocked ? ' disabled' : ''}></button><span class="subtitle">${esc(s.title)}</span>${due}</div>`;
+    }).join('') + `<form class="subaddform" data-for="${esc(t.id)}"><input type="text" placeholder="+ sous-tâche" maxlength="120" aria-label="Ajouter une sous-tâche" autocomplete="off"></form></div>`;
+  }
+  return { sum, list };
+}
 function cardHTML(t, now) {
   const s = status(t, now);
   const cls = ['card'];
   if (s.level !== 'ok') cls.push(s.level); else if (s.prio) cls.push('prio');
   let meta;
-  if (s.late) {
+  if (s.ownLate) {
     meta = `<span>En retard de ${lateLabel(s.lateMs)}</span>`;
   } else {
     meta = `${s.prio ? '<span><i class="prio-dot"></i>Prioritaire</span>' : ''}<span>${esc(dueLabel(t, now))}</span>`;
   }
+  if (s.cause) meta += `<span>${s.late ? 'Étape en retard' : 'Étape urgente'} : ${esc(s.cause.title)}</span>`;
   if (t.every) meta += `<span>↻ ${t.every} j</span>`;
-  return `<article class="${cls.join(' ')}" data-id="${t.id}">
+  const sb = subsHTML(t, now);
+  return `<article class="${cls.join(' ')}" data-id="${esc(t.id)}">
     <button class="check" aria-label="Terminer"></button>
-    <div class="body"><div class="title">${esc(t.title)}</div><div class="meta">${meta}</div>${barHTML(s)}</div>
+    <div class="body"><div class="title">${esc(t.title)}</div><div class="meta">${meta}</div>${sb.sum}${barHTML(s)}${sb.list}</div>
   </article>`;
 }
 
@@ -387,18 +539,55 @@ function render() {
   $('laterBox').hidden = later.length === 0;
   $('laterSummary').textContent = `Plus tard (${later.length})`;
   $('later').innerHTML = later.map(t => cardHTML(t, now)).join('');
+  if (focusAddFor) {
+    const inp = document.querySelector('.subaddform[data-for="' + focusAddFor + '"] input');
+    if (inp) inp.focus();
+    focusAddFor = null;
+  }
 }
 
 /* ---------- Interactions ---------- */
-document.addEventListener('click', e => {
+function confirmFinish(open) {
+  return new Promise(res => {
+    const dlg = $('confirmDlg');
+    $('confirmMsg').textContent = open === 1
+      ? 'Il reste 1 sous-tâche non terminée.' : 'Il reste ' + open + ' sous-tâches non terminées.';
+    $('confirmYes').onclick = () => { res(true); dlg.close(); };
+    $('confirmNo').onclick = () => { res(false); dlg.close(); };
+    dlg.addEventListener('close', () => res(false), { once: true });
+    dlg.showModal();
+  });
+}
+const finishing = new Set();
+document.addEventListener('click', async e => {
   const card = e.target.closest('.card');
   if (!card) return;
   const id = card.dataset.id;
+
+  const sc = e.target.closest('.subcheck');
+  if (sc) {
+    if (sc.disabled) return;
+    tasks = toggleSub(tasks, id, sc.closest('.sub').dataset.sid); save(); render();
+    return;
+  }
+  if (e.target.closest('.subtoggle')) {
+    if (openSet.has(id)) openSet.delete(id);
+    else { openSet.add(id); const t = tasks.find(x => x.id === id); if (t && !(t.subs || []).length) focusAddFor = id; }
+    render();
+    return;
+  }
+  if (e.target.closest('.sublist, .subsum')) return;
+
   if (e.target.closest('.check')) {
-    if (card.classList.contains('done')) return;          // évite le double appui
-    card.classList.add('done');
+    const t = tasks.find(x => x.id === id);
+    if (!t || finishing.has(id)) return;                  // évite le double appui
+    finishing.add(id);
+    const open = openSubs(t).length;
+    if (open && !(await confirmFinish(open))) { finishing.delete(id); return; }
+    (document.querySelector('.card[data-id="' + id + '"]') || card).classList.add('done');
     setTimeout(() => {
-      const before = tasks.find(t => t.id === id);
+      finishing.delete(id);
+      const before = tasks.find(x => x.id === id);
       if (!before) return;
       tasks = completeTask(tasks, id, Date.now()); save();
       recordAction(before, 'done'); render();
@@ -407,8 +596,58 @@ document.addEventListener('click', e => {
     openForm(tasks.find(t => t.id === id));
   }
 });
+// Ajout rapide d'une sous-tâche depuis la carte
+document.addEventListener('submit', e => {
+  const f = e.target.closest ? e.target.closest('.subaddform') : null;
+  if (!f) return;
+  e.preventDefault();
+  const id = f.dataset.for;
+  tasks = addSub(tasks, id, f.querySelector('input').value, uid()); save();
+  focusAddFor = id;
+  render();
+});
 
+/* Formulaire : tâche + éditeur de sous-tâches */
 let editingId = null;
+let formSubs = [];
+function renderFormSubs() {
+  $('subList').innerHTML = formSubs.map((s, i) => `<div class="srow" data-i="${i}">
+      <input type="text" class="s-title" value="${esc(s.title)}" placeholder="Sous-tâche" maxlength="120" aria-label="Titre de la sous-tâche">
+      <div class="line2">
+        <input type="date" class="s-due" value="${esc(s.due || '')}" aria-label="Date de la sous-tâche (facultative)">
+        <button type="button" data-act="up" aria-label="Monter"${i === 0 ? ' disabled' : ''}>↑</button>
+        <button type="button" data-act="down" aria-label="Descendre"${i === formSubs.length - 1 ? ' disabled' : ''}>↓</button>
+        <button type="button" data-act="del" aria-label="Supprimer la sous-tâche">×</button>
+      </div>
+    </div>`).join('');
+  $('orderedRow').hidden = formSubs.length === 0;
+  $('addSubBtn').hidden = formSubs.length >= MAX_SUBS;
+}
+$('subList').addEventListener('input', e => {
+  const row = e.target.closest('.srow');
+  if (!row) return;
+  const s = formSubs[Number(row.dataset.i)];
+  if (!s) return;
+  if (e.target.classList.contains('s-title')) s.title = e.target.value;
+  if (e.target.classList.contains('s-due')) s.due = e.target.value;
+});
+$('subList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const i = Number(b.closest('.srow').dataset.i);
+  const act = b.dataset.act;
+  if (act === 'del') formSubs.splice(i, 1);
+  if (act === 'up' && i > 0) [formSubs[i - 1], formSubs[i]] = [formSubs[i], formSubs[i - 1]];
+  if (act === 'down' && i < formSubs.length - 1) [formSubs[i + 1], formSubs[i]] = [formSubs[i], formSubs[i + 1]];
+  renderFormSubs();
+});
+$('addSubBtn').onclick = () => {
+  if (formSubs.length >= MAX_SUBS) return;
+  formSubs.push({ id: uid(), title: '', done: false, due: '' });
+  renderFormSubs();
+  const rows = $('subList').querySelectorAll('.s-title');
+  rows[rows.length - 1].focus();
+};
 function openForm(t) {
   editingId = t ? t.id : null;
   $('dlgTitle').textContent = t ? 'Modifier la tâche' : 'Nouvelle tâche';
@@ -419,6 +658,9 @@ function openForm(t) {
   $('fPeriodic').checked = !!(t && t.every);
   $('fEvery').value = t && t.every ? t.every : 7;
   $('everyBox').classList.toggle('on', $('fPeriodic').checked);
+  formSubs = t && t.subs ? t.subs.map(s => ({ ...s })) : [];
+  $('fOrdered').checked = !!(t && t.ordered);
+  renderFormSubs();
   $('delBtn').hidden = !t;
   $('taskDlg').showModal();
   if (!t) setTimeout(() => $('fTitle').focus(), 50);
@@ -435,29 +677,39 @@ $('taskForm').addEventListener('submit', () => {
   const title = $('fTitle').value.trim();
   if (!title || !$('fDue').value) return;
   const every = $('fPeriodic').checked ? Math.max(1, parseInt($('fEvery').value, 10) || 1) : 0;
-  const data = { title, due: $('fDue').value, time: $('fTime').value || '', priority: $('fPrio').checked, every };
+  const cleaned = formSubs.map(s => ({ ...s, title: (s.title || '').trim() })).filter(s => s.title);
+  const capped = capSubs(cleaned, $('fDue').value);
+  const data = {
+    title, due: $('fDue').value, time: $('fTime').value || '', priority: $('fPrio').checked, every,
+    subs: capped.subs, ordered: $('fOrdered').checked && capped.subs.length > 0
+  };
   if (editingId) {
     tasks = tasks.map(t => t.id === editingId ? { ...t, ...data } : t);   // la date de création d'origine est conservée
   } else {
-    tasks.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created: Date.now(), ...data });
+    tasks.push({ id: uid(), created: Date.now(), ...data });
   }
   save(); render();
+  if (capped.changed) showInfo(capped.changed === 1
+    ? '1 date de sous-tâche ramenée à l\'échéance'
+    : capped.changed + ' dates de sous-tâches ramenées à l\'échéance');
 });
 
 /* Annulation : bandeau + liste de restauration */
 let toastTimer = null, toastEntry = null;
 function hideToast() { clearTimeout(toastTimer); toastEntry = null; $('toast').hidden = true; }
-function showToast(entry) {
-  toastEntry = entry;
-  $('toastMsg').textContent = '« ' + entry.task.title + ' » ' + (entry.kind === 'deleted' ? 'supprimée' : 'terminée');
+function showToast(msg, entry) {
+  toastEntry = entry || null;
+  $('toastMsg').textContent = msg;
+  $('toastUndo').hidden = !entry;
   $('toast').hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(hideToast, TOAST_MS);
 }
+const showInfo = msg => showToast(msg, null);
 function recordAction(task, kind) {
   const entry = { task, kind, at: Date.now() };
   trash = pushTrash(trash, entry, entry.at); saveTrash();
-  showToast(entry);
+  showToast('« ' + task.title + ' » ' + (kind === 'deleted' ? 'supprimée' : 'terminée'), entry);
 }
 function restoreEntry(entry) {
   tasks = restoreTask(tasks, entry.task); save();
@@ -504,15 +756,17 @@ $('importFile').onchange = async e => {
   try {
     const data = JSON.parse(await f.text());
     if (!Array.isArray(data)) throw 0;
-    tasks = data.filter(t => t && t.id && t.title && t.due && t.created);
+    tasks = data.filter(t => t && t.id && t.title && t.due && t.created)
+      .map(t => Array.isArray(t.subs) ? { ...t, subs: t.subs.filter(s => s && s.id && s.title).slice(0, MAX_SUBS) } : t);
     save(); render(); $('menuDlg').close();
   } catch (err) { alert('Fichier invalide.'); }
   e.target.value = '';
 };
 
-/* Rafraîchissement : chaque minute et au retour sur l'appli */
-setInterval(render, 60000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+/* Rafraîchissement : chaque minute et au retour sur l'appli (sans couper une saisie en cours) */
+const typing = () => { const a = document.activeElement; return !!(a && a.closest && a.closest('.subaddform')); };
+setInterval(() => { if (!typing()) render(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !typing()) render(); });
 render();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

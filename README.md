@@ -20,6 +20,17 @@ Les données restent dans ton navigateur (aucun serveur, aucun compte).
 - **Pas d'historique durable** : au-delà de 24 h, une tâche validée a disparu pour de bon.
 - **Sauvegarde** : menu « ⋯ » pour exporter / importer un fichier JSON.
 
+## Sous-tâches
+
+- **Ajout** : depuis la carte (« + sous-tâche », champ à remplir puis Entrée) ou depuis le formulaire de la tâche (titre, date facultative, ↑ ↓ pour réordonner, × pour supprimer). Un seul niveau, 20 sous-tâches maximum.
+- **Affichage** : la carte montre « 2/5 ». Toucher ce compteur déplie la liste, toucher le titre ouvre la modification. Les sous-tâches faites restent visibles, barrées, jusqu'à la validation de la tâche principale.
+- **Mode « dans l'ordre »** : seule la prochaine étape peut être cochée, les suivantes sont grisées, et la carte indique « Prochaine : … ». Sans ce mode, les étapes se cochent dans n'importe quel ordre.
+- **Temps** : une sous-tâche sans date suit celle de la tâche principale. Avec une date, son temps court du début de la tâche principale jusqu'à cette date, avec les mêmes seuils (10 % jaune, 5 % rouge, puis retard). Une date postérieure à l'échéance de la tâche est ramenée à cette échéance à l'enregistrement, avec un message.
+- **L'urgence remonte** : si une étape non faite passe au jaune, au rouge ou en retard, la tâche principale prend la même couleur, devient prioritaire et nomme l'étape en cause.
+- **Validation** : terminer une tâche qui a encore des sous-tâches ouvertes demande confirmation. Cocher la dernière sous-tâche ne ferme pas la tâche : c'est toi qui la termines.
+- **Tâches périodiques** : à chaque nouvelle occurrence, les sous-tâches sont décochées et leurs dates décalées comme l'échéance.
+- **Annulation** : restaure la tâche avec ses sous-tâches. L'export et l'import les conservent.
+
 ## Déployer sur GitHub Pages
 
 1. Dépôt GitHub public (ici `done`).
