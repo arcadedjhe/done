@@ -8,8 +8,8 @@ Les données restent dans ton navigateur (aucun serveur, aucun compte).
 - **Tâche** : titre, échéance (calendrier), heure facultative (23:59 par défaut), prioritaire oui/non, périodique oui/non (« tous les N jours »).
 - **Temps prévu** : de la création de la tâche à son échéance. La barre de progression indique la part de ce temps déjà écoulée.
 - **Barre de progression**
-  - Tâche courte (moins de 2 jours) ou moyenne (2 jours à 90 jours) : la barre apparaît quand il reste 10 % du temps.
-  - Tâche longue (plus de 90 jours) : la barre apparaît dès 25 % du temps écoulé, avec des repères à 50 % et 75 %.
+  - Tâche courte (moins de 2 jours) ou moyenne (2 à 30 jours) : la barre apparaît quand il reste 10 % du temps.
+  - Tâche longue (plus de 30 jours, c'est-à-dire une échéance à 30 jours ou plus) : la barre apparaît dès 25 % du temps écoulé, avec des repères à 50 % et 75 %.
 - **Couleurs (zen)** : 10 % restants → **jaune** ; 5 % restants → **rouge doux**.
 - **Priorité automatique** : une tâche devient prioritaire dès qu'il reste 10 % du temps prévu.
 - **Retard** : un seul niveau, **rouge plein** qui pulse, tout en haut de la liste, avec le temps de retard.
@@ -49,4 +49,4 @@ Remplace les fichiers modifiés dans le dépôt. Pour forcer le renouvellement d
 
 ## Réglages
 
-En haut du script de `index.html` : `YELLOW_AT` (0.90), `RED_AT` (0.95), `LONG_BAR_AT` (0.25), `SHORT_MAX` (2 jours), `LONG_MIN` (90 jours), `SOON_DAYS` (2).
+En haut du script de `index.html` : `YELLOW_AT` (0.90), `RED_AT` (0.95), `LONG_BAR_AT` (0.25), `SHORT_MAX` (2 jours), `LONG_MIN` (30 jours), `SOON_DAYS` (2).
